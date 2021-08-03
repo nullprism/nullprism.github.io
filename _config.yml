@@ -27,9 +27,8 @@ title: Nullprism                          # the main title
 tagline: Musings   # it will display as the sub-title
 
 description: >-                        # used by seo meta and the atom feed
-  A minimal, portfolio, sidebar,
-  bootstrap Jekyll theme with responsive web design
-  and focuses on text presentation.
+  A blog of documenting things I enjoye learning about in cybersecurity. Expect to 
+  read about security findings, CTFs, HackTheBox, writeups, red and blue team items.
 
 # fill in the protocol & hostname for your site, e.g., 'https://username.github.io'
 #url: 'https://nullprism.github.io/'
@@ -60,7 +59,7 @@ google_site_verification: google_meta_tag_verification # change to your verifica
 
 
 google_analytics:
-  id: 'G-4PJXJ7VQ18'              # fill in your Google Analytics ID
+  id: 'G-E8EH9MYEVL'              # fill in your Google Analytics ID
   # Google Analytics pageviews report settings
   pv:
     proxy_endpoint:   # fill in the Google Analytics superProxy endpoint of Google App Engine
