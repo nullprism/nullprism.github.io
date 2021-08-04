@@ -1,8 +1,8 @@
 ---
 title: Getting Started
 author: Cotes Chung
-date: 2019-08-09 20:55:00 +0800
-categories: [Blogging, Tutorial]
+date: 2021-08-03 22:10:00 +0000
+categories: [HTB, Windows]
 tags: [oscp-like, legacy, windows, smb, ms08-067, msfvenom, ctf, hackthebox, htb, reconnoitre, 2to3]
 ---
 ## Intro
@@ -74,9 +74,9 @@ Host script results:
 |_      https://blogs.technet.microsoft.com/msrc/2017/05/12/customer-guidance-for-wannacrypt-attacks/
 ```
 
-# Exploitation
+## Exploitation
 
-## Finding an Exploit
+### Finding an Exploit
 I generally believe in following the path of least resistance whenever possible, and ```MS08-67``` is one of the more famous exploits. I think everyone in the world uses jovoi's POC of the exploit, found on their GitHub [here](https://github.com/jivoi/pentest). Considering the age of the POC against our current Attack Platform version (Kali 2021.1 at the time of this article), we will likely need to do some python2 and python3 juggling. I'll link my finalized exploit code later on.
 
 Reading through the POC, we will need to generate our own unique reverse shell payload. I prefer reverse shells whenever possible, as target firewalls are generally more permissive outbound, than inbound (less logging generally, too).
