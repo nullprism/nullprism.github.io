@@ -1,5 +1,5 @@
 ---
-title: "HTB: Legacy"
+title: 'HTB: Legacy'
 date: 2021-08-03 21:51:00 -0600
 categories: [HTB, Windows]
 tags: [oscp-like, legacy, windows, smb, ms08-067, msfvenom, ctf, hackthebox, htb, reconnoitre, 2to3]
