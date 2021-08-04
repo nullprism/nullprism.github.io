@@ -1,7 +1,7 @@
 ---
 title: Getting Started
-author: Cotes Chung
-date: 2021-08-03 22:10:00 +0000
+author: Nullprism
+date: 2021-08-03 22:10:00 -0500
 categories: [HTB, Windows]
 tags: [oscp-like, legacy, windows, smb, ms08-067, msfvenom, ctf, hackthebox, htb, reconnoitre, 2to3]
 ---
