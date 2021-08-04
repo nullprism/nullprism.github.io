@@ -3,11 +3,6 @@ title: HTB- Legacy
 date: 2021-08-03 21:51:00 -0600
 categories: [HTB, Windows]
 tags: [oscp-like, legacy, windows, smb, ms08-067, msfvenom, ctf, hackthebox, htb, reconnoitre, 2to3]
-image: 
-    src: /assets/image/htb/legacy/legacy_title_card.png
-    width: 1000
-    height: 400
-    alt: Legacy Title Card
 ---
 
 # Intro
