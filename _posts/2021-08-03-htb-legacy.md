@@ -3,7 +3,7 @@ title: 'HTB: Legacy'
 author: Nullprism
 date: 2021-08-03 22:10:00 -0500
 categories: [HTB, Windows]
-tags: [oscp-like, oscp prep, legacy, windows, smb, ms08-067, msfvenom, ctf, hackthebox, htb, reconnoitre, 2to3]
+tags: [oscp-like, oscp prep, writeup, walkthrough, legacy, windows, smb, ms08-067, msfvenom, ctf, hackthebox, htb, reconnoitre, 2to3]
 image:
   src: /assets/img/htb/legacy/legacy_title_card.png
   width: 500   # in pixels
@@ -17,7 +17,7 @@ So I finally decided to get serious about doing the OSCP. My work colleagues hav
 
 ## Initial Engagement & Enumeration
 
-Started with a general reconnassaince and services scan via [reconnoitre](https://github.com/codingo/Reconnoitre). I'd actually stumbled on this tool a while back when I was looking for enumeration and initial engagement automation frameworks. I've used it a lot since then, and I'm thrilled its in play for OSCP. [Codingo](https://twitter.com/codingo_) did an excellent job with it.
+Started with a general reconnassaince and services scan via [reconnoitre](https://github.com/codingo/Reconnoitre). I'd actually stumbled on this tool a while back when I was looking for enumeration and initial engagement automation frameworks. I've used it a lot since then, and I'm thrilled its in play for OSCP. [Codingo](https://twitter.com/codingo_) did an excellent job with it. Its full capabilities won't likely be seen on this box, as the enumeration path is pretty straightforward, but it'll show its value later on, I have no doubt.
 
 ### Reconnoitre
 
@@ -36,6 +36,7 @@ Initial scan reveals the box to be:
 
 ## Enumeration
 
+### Initial Assessment
 Port 445 is open. Given the OS version and likely patch level of the OS, and lack of other open services, SMB is likely fertile ground for an exploitation vector to gain a foothold on this box. Let's execute some vulnerability scanning functionality within nmap to see if we can find a viable pathway.
 
 ### Using NMAP to check for SMB Vulnerabilities
