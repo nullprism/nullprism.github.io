@@ -1,9 +1,14 @@
 ---
-title: Getting Started
+title: 'HTB: Legacy'
 author: Nullprism
 date: 2021-08-03 22:10:00 -0500
 categories: [HTB, Windows]
 tags: [oscp-like, legacy, windows, smb, ms08-067, msfvenom, ctf, hackthebox, htb, reconnoitre, 2to3]
+image:
+  src: /assets/img/htb/legacy/legacy_title_card.png
+  width: 1000   # in pixels
+  height: 400   # in pixels
+  alt: Legacy Title Card
 ---
 ## Intro
 
