@@ -27,7 +27,7 @@ title: Nullprism                          # the main title
 tagline: Yet Another Cybersecurity Blog. But its more for me, than you.   # it will display as the sub-title
 
 description: >-                        # used by seo meta and the atom feed
-  A blog of documenting things I enjoye learning about in cybersecurity. Expect to 
+  A blog of documenting things I enjoy learning about in cybersecurity. Expect to 
   read about security findings, CTFs, HackTheBox, writeups, red and blue team items.
 
 # fill in the protocol & hostname for your site, e.g., 'https://username.github.io'
